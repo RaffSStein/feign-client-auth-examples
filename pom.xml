@@ -5,26 +5,32 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>stein.raff</groupId>
-    <artifactId>untitled</artifactId>
+    <artifactId>feign-client</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.1</version>
+    </parent>
+
     <properties>
+        <java.version>21</java.version>
         <maven.compiler.source>23</maven.compiler.source>
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.4.2</spring-boot.version>
-        <spring-boot-devtools.version>3.4.2</spring-boot-devtools.version>
-        <spring-boot-starter-test.version>3.4.2</spring-boot-starter-test.version>
+        <spring-boot.version>3.4.1</spring-boot.version>
+        <spring-boot-devtools.version>3.4.1</spring-boot-devtools.version>
+        <spring-boot-starter-test.version>3.4.1</spring-boot-starter-test.version>
         <lombok.version>1.18.36</lombok.version>
         <jackson-core-databind.version>2.18.2</jackson-core-databind.version>
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
         </dependency>
 
         <!-- Feign Client -->
@@ -77,7 +83,7 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
-                <version>2023.0.0</version>
+                <version>2024.0.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
