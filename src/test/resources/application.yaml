@@ -19,3 +19,9 @@ spring:
           password: password
           workstation: workstation
           domain: domain
+logging:
+  level:
+    raff:
+      stein:
+        feignclient:
+          DEBUG

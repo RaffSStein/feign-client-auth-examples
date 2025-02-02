@@ -1,6 +1,7 @@
 package raff.stein.feignclient.client.ntlm.config;
 
 import feign.Client;
+import feign.Logger;
 import feign.httpclient.ApacheHttpClient;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.NTCredentials;
@@ -13,11 +14,9 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
-@Configuration
 public class NTLMClientConfig {
 
     @Value("${spring.application.rest.client.ntlm.username}")
@@ -66,4 +65,7 @@ public class NTLMClientConfig {
             throw new RuntimeException("Error during NTLM feign client definition", e);
         }
     }
+
+    @Bean
+    public Logger.Level ntlmLoggerLevel() {return Logger.Level.FULL;}
 }

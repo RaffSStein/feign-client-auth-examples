@@ -1,13 +1,12 @@
 package raff.stein.feignclient.client.basicauth.config;
 
+import feign.Logger;
 import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.Base64;
 
-@Configuration
 public class BasicAuthClientConfig {
 
     @Value("${spring.application.rest.client.basic-auth.username}")
@@ -26,4 +25,7 @@ public class BasicAuthClientConfig {
             requestTemplate.header("Authorization", "Basic " + encodedAuth);
         };
     }
+
+    @Bean
+    public Logger.Level basicAuthLoggerLevel() {return Logger.Level.FULL;}
 }

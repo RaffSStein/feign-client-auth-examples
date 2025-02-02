@@ -26,4 +26,10 @@ public class FeignClientSimpleController {
         return ResponseEntity.ok(responseString);
     }
 
+    @GetMapping("/ntlm")
+    public ResponseEntity<String> getDataWithNtlm() {
+        final String responseString = feignClientSimpleService.simpleNTLMClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
 }

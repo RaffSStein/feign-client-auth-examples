@@ -96,9 +96,6 @@
             <artifactId>feign-httpclient</artifactId>
             <version>13.5</version>
         </dependency>
-
-
-
     </dependencies>
 
     <dependencyManagement>

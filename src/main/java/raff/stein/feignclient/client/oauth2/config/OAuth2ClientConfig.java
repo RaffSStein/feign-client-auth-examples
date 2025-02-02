@@ -4,7 +4,6 @@ import feign.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.openfeign.security.OAuth2AccessTokenInterceptor;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -12,7 +11,6 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 
-@Configuration
 public class OAuth2ClientConfig {
 
 
@@ -53,6 +51,6 @@ public class OAuth2ClientConfig {
     }
 
     @Bean
-    public Logger.Level feignLoggerLevel() {return Logger.Level.FULL;}
+    public Logger.Level oauth2LoggerLevel() {return Logger.Level.FULL;}
 
 }
