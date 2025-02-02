@@ -15,8 +15,14 @@ public class FeignClientSimpleController {
     private final FeignClientSimpleService feignClientSimpleService;
 
     @GetMapping("/basic-auth")
-    public ResponseEntity<String> getSecureData() {
+    public ResponseEntity<String> getDataWithBasicAuth() {
         final String responseString = feignClientSimpleService.simpleBasicAuthClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
+    @GetMapping("/oauth2")
+    public ResponseEntity<String> getDataWithOauth2() {
+        final String responseString = feignClientSimpleService.simpleOAuth2ClientCall();
         return ResponseEntity.ok(responseString);
     }
 

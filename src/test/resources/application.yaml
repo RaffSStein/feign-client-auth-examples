@@ -1,8 +1,15 @@
 spring:
   application:
+    name: feign-client-app
     rest:
       client:
         basic-auth:
           username: username
           password: password
           host: http://localhost:8081
+        oauth2:
+          host: http://localhost:8083
+          token:
+            url: http://localhost:8084
+            client-id: client-id
+            client-secret: client-secret
