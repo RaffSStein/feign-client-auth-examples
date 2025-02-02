@@ -89,6 +89,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
+
+        <!-- feign apache http client for NTLM -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-httpclient</artifactId>
+            <version>13.5</version>
+        </dependency>
+
+
+
     </dependencies>
 
     <dependencyManagement>

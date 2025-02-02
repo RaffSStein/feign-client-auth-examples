@@ -31,7 +31,6 @@ public class FeignClientTest {
 
     OAuth2AccessTokenInterceptor oAuth2AccessTokenInterceptor = Mockito.mock(OAuth2AccessTokenInterceptor.class);
 
-
     // BASIC AUTH
     // specific basic auth API calls
     static WireMockServer basicAuthContentMockServer;

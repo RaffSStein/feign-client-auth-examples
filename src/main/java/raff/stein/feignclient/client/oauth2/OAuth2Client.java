@@ -1,8 +1,8 @@
-package raff.stein.feignclient.oauth2client;
+package raff.stein.feignclient.client.oauth2;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
-import raff.stein.feignclient.oauth2client.config.OAuth2ClientConfig;
+import raff.stein.feignclient.client.oauth2.config.OAuth2ClientConfig;
 
 @FeignClient(
         name = "OAuth2Client",

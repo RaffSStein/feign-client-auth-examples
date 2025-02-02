@@ -1,8 +1,8 @@
-package raff.stein.feignclient.basicauth;
+package raff.stein.feignclient.client.basicauth;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
-import raff.stein.feignclient.basicauth.config.BasicAuthClientConfig;
+import raff.stein.feignclient.client.basicauth.config.BasicAuthClientConfig;
 
 @FeignClient(
         name = "basicAuthClient",

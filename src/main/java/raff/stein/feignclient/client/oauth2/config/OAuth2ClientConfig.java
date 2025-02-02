@@ -1,4 +1,4 @@
-package raff.stein.feignclient.oauth2client.config;
+package raff.stein.feignclient.client.oauth2.config;
 
 import feign.Logger;
 import org.springframework.beans.factory.annotation.Value;
