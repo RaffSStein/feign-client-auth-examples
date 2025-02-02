@@ -77,15 +77,23 @@
             <version>3.2.0</version>
         </dependency>
 
+        <!-- testcontainers probably not needed -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Spring boot oauth2 for oauth2 client registration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
         <dependencies>
+            <!--  spring cloud dependencies for open feign - spring boot compatibility -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -93,7 +101,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <!-- Test containers, probably to remove -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
