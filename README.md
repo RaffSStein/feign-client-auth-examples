@@ -7,9 +7,12 @@ This repository demonstrates the usage of various authentication methods when in
 - [Overview](#overview)
 - [Basic Authentication Example](#basic-authentication-example)
 - [OAuth2 Authentication Example](#oauth2-authentication-example)
-- [How to Run the Project](#how-to-run-the-project)
-- [Configuration](#configuration)
-- [License](#license)
+
+[//]: # (- [How to Run the Project]&#40;#how-to-run-the-project&#41;)
+
+[//]: # (- [Configuration]&#40;#configuration&#41;)
+
+[//]: # (- [License]&#40;#license&#41;)
 
 ## Overview
 
