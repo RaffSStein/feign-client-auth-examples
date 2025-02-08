@@ -3,8 +3,9 @@ package raff.stein.feignclient.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import raff.stein.feignclient.basicauth.BasicAuthClient;
-import raff.stein.feignclient.oauth2client.OAuth2Client;
+import raff.stein.feignclient.client.basicauth.BasicAuthClient;
+import raff.stein.feignclient.client.ntlm.NTLMClient;
+import raff.stein.feignclient.client.oauth2.OAuth2Client;
 
 @Service
 @Slf4j
@@ -13,6 +14,7 @@ public class FeignClientSimpleService {
 
     private final BasicAuthClient basicAuthClient;
     private final OAuth2Client oAuth2Client;
+    private final NTLMClient ntlmClient;
 
     public String simpleBasicAuthClientCall() {
         return basicAuthClient.getData();
@@ -21,4 +23,9 @@ public class FeignClientSimpleService {
     public String simpleOAuth2ClientCall() {
         return oAuth2Client.getData();
     }
+
+    public String simpleNTLMClientCall() {
+        return ntlmClient.getData();
+    }
+
 }

@@ -13,3 +13,19 @@ spring:
             url: http://localhost:8084
             client-id: client-id
             client-secret: client-secret
+        ntlm:
+          host: http://localhost:8085
+          username: username
+          password: password
+          workstation: workstation
+          domain: domain
+logging:
+  level:
+    raff:
+      stein:
+        feignclient:
+          DEBUG
+    org:
+      apache:
+        http:
+          TRACE
