@@ -1,4 +1,4 @@
-# Feign Client Authentication Examples
+# Feign Client Authentication Examples with Spring
 
 This repository demonstrates the usage of various authentication methods when interacting with APIs using **Feign Client** in a Spring Boot application. The examples in this project show how to configure and use **Basic Authentication** and **OAuth2 Authentication** for making secure API requests.
 
@@ -7,6 +7,7 @@ This repository demonstrates the usage of various authentication methods when in
 - [Overview](#overview)
 - [Basic Authentication Example](#basic-authentication-example)
 - [OAuth2 Authentication Example](#oauth2-authentication-example)
+- [NTLM Authentication Example](#ntlm-authentication-example)
 
 [//]: # (- [How to Run the Project]&#40;#how-to-run-the-project&#41;)
 
@@ -37,7 +38,6 @@ In the example, the credentials are properties.
 
 
 ```java
-@Configuration
 public class BasicAuthClientConfig {
 
    @Value("${spring.application.rest.client.basic-auth.username}")
@@ -75,7 +75,6 @@ taking care of any JWT or refresh tokens.
 
 
 ```java
-@Configuration
 public class OAuth2ClientConfig {
 
 
@@ -121,3 +120,83 @@ public class OAuth2ClientConfig {
 }
 ```
 
+## NTLM Authentication Example
+
+NTLM uses a three-step handshake (challenge-response mechanism) that involves sending and managing dynamically encoded messages. 
+1. The client sends an initial request without an authentication header. The server detects the absence of credentials and responds with a 401 Unauthorized status, including the following header in the response:
+``WWW-Authenticate: NTLM``.
+This indicates that the server requires NTLM authentication.
+2. After receiving the 401 response, the client generates an NTLM negotiation message (Type 1), which is Base64-encoded, and sends a new request with the following header:
+``Authorization: NTLM <type1_message_in_base64>``
+3. The server responds with another 401 Unauthorized, but this time it includes a challenge in the header:
+``WWW-Authenticate: NTLM <challenge_in_base64>``. The server provides a challenge that the client must process.
+4. The client takes the challenge received, along with the credentials (username, password, domain, etc.), and generates the NTLM response message (Type 3). This response is also Base64-encoded and sent in a new request with the following header:
+``Authorization: NTLM <type3_message_in_base64>``.
+If the server successfully verifies the response, the request is accepted (typically returning a 200 OK).
+  
+In this example, we will configure a Feign client to make requests using NTLM authentication.
+But be careful: this authentication method is deprecated and a more solid authentication should be used (like Basic Auth).
+
+### Feign Client Configuration (NTLM)
+For NTLM authentication we've defined a new Feign (ApacheHttp) Client.
+For this kind of client we used the ``org.apache.http`` library in order to define some characteristics of the client, like:
+1. Credentials/Credentials provider
+2. SSL for HTTPS calls
+3. Client definition, including any custom headers
+
+
+
+```java
+public class NTLMClientConfig {
+
+    @Value("${spring.application.rest.client.ntlm.username}")
+    private String username;
+    @Value("${spring.application.rest.client.ntlm.password}")
+    private String password;
+    @Value("${spring.application.rest.client.ntlm.workstation}")
+    private String workstation;
+    @Value("${spring.application.rest.client.ntlm.domain}")
+    private String domain;
+
+    @Bean
+    public Client NTLMClient() {
+        try {
+            // NTLM credentials definition
+            final NTCredentials ntCredentials = new NTCredentials(
+                    username,
+                    password,
+                    workstation,
+                    domain);
+
+            final BasicCredentialsProvider basicCredentialsProvider = new BasicCredentialsProvider();
+            basicCredentialsProvider.setCredentials(AuthScope.ANY, ntCredentials);
+
+            // configure SSL for HTTPS calls if needed
+            final SSLContextBuilder sslContextBuilder = SSLContextBuilder.create();
+            sslContextBuilder.loadTrustMaterial(new TrustSelfSignedStrategy());
+            final SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(
+                    sslContextBuilder.build(),
+                    SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+
+            // HTTP client definition
+            final CloseableHttpClient closeableHttpClient = HttpClients.custom()
+                    .setDefaultCredentialsProvider(basicCredentialsProvider)
+                    //SSL
+                    .setSSLSocketFactory(sslConnectionSocketFactory)
+                    // any custom headers
+                    .setDefaultHeaders(List.of(
+                            new BasicHeader("custom-header", "customheader")
+                    ))
+                    .build();
+
+            return new ApacheHttpClient(closeableHttpClient);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error during NTLM feign client definition", e);
+        }
+    }
+
+    @Bean
+    public Logger.Level ntlmLoggerLevel() {return Logger.Level.FULL;}
+}
+```

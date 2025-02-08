@@ -25,3 +25,7 @@ logging:
       stein:
         feignclient:
           DEBUG
+    org:
+      apache:
+        http:
+          TRACE

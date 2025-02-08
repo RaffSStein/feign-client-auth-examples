@@ -3,6 +3,7 @@ package raff.stein.feignclient;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -57,9 +58,44 @@ public class FeignClientTest {
     private static void setupNTLMServer() {
         ntlmMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8085));
         ntlmMockServer.start();
+        // phase 1: no auth header -> 401 response with header WWW-Authenticate: NTLM
         ntlmMockServer.stubFor(
-                WireMock.get(WireMock.urlEqualTo("/get-data")).willReturn(
-                        WireMock.aResponse()
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                        .inScenario("NTLM Authentication")
+                        .whenScenarioStateIs(Scenario.STARTED)
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(401)
+                                .withHeader("WWW-Authenticate", "NTLM")
+                                .withBody("Unauthorized"))
+                        .willSetStateTo("TYPE1_RECEIVED")
+        );
+
+        // phase 2: the server should receive a request with an auth header (NTLM type 1) and it should respond with a 401
+        // and a dummy challenge into another header (NTLM type 2)
+        // In NTLM the negotiation messages (Type 1) usually starts with "TlRMTVNTUAAB".
+        ntlmMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                        .inScenario("NTLM Authentication")
+                        .whenScenarioStateIs("TYPE1_RECEIVED")
+                        .withHeader("Authorization", WireMock.matching("NTLM\\s+TlRMTVNTUAAB.*"))
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(401)
+                                // we return a well formatted a challenge type 2 header
+                                .withHeader(
+                                        "WWW-Authenticate",
+                                        "NTLM TlRMTVNTUAACAAAADAAMADgAAAAFgomi5/gAAAAAAAAAAAAAAAAAAAAAGAbEdAAAADw==")
+                                .withBody("Unauthorized"))
+                        .willSetStateTo("TYPE3_RECEIVED")
+        );
+        // phase 3: the server should receive another request with an auth header "Authorization" (NTLM type 3)
+        // and it should respond with 200 OK and the response body
+        // usually the type 3 message starts with "TlRMTVNTUAAD".
+        ntlmMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                        .inScenario("NTLM Authentication")
+                        .whenScenarioStateIs("TYPE3_RECEIVED")
+                        .withHeader("Authorization", WireMock.matching("NTLM\\s+TlRMTVNTUAAD.*"))
+                        .willReturn(WireMock.aResponse()
                                 .withStatus(200)
                                 .withBody(NTLM_200_RESPONSE_STRING))
         );
@@ -205,7 +241,8 @@ public class FeignClientTest {
                     // check if we got a request for that url
                     List<ServeEvent> events = ntlmMockServer.getAllServeEvents();
                     int numberOfRequestReceived = events.size();
-                    Assertions.assertEquals(1, numberOfRequestReceived);
+                    // the number of requests should be 3, according to the NTLM authorization process
+                    Assertions.assertEquals(3, numberOfRequestReceived);
 
                     boolean requestReceived = events
                             .stream()
