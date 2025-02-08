@@ -1,6 +1,8 @@
 # Feign Client Authentication Examples with Spring
 
-This repository demonstrates the usage of various authentication methods when interacting with APIs using **Feign Client** in a Spring Boot application. The examples in this project show how to configure and use **Basic Authentication** and **OAuth2 Authentication** for making secure API requests.
+This repository demonstrates the usage of various authentication methods when interacting with APIs using **Feign Client**
+in a Spring Boot application. 
+The examples are showcased into a test class which simulates servers for each auth method.
 
 ## Table of Contents
 
@@ -8,6 +10,12 @@ This repository demonstrates the usage of various authentication methods when in
 - [Basic Authentication Example](#basic-authentication-example)
 - [OAuth2 Authentication Example](#oauth2-authentication-example)
 - [NTLM Authentication Example](#ntlm-authentication-example)
+- [API Key Authentication Example](#api-key-authentication-example)
+- [JWT Based Authentication Example](#jwt-based-authentication-example)
+- [Digest Authentication Example](#digest-authentication-example)
+- [Mutual TLS Authentication Example](#digest-authentication-example)
+- [HMAC (Hash-based Message Authentication Code) Example](#hmac-hash-based-message-authentication-code-example)
+- [SAML (Security Assertion Markup Language) Example](#saml-security-assertion-markup-language-example)
 
 [//]: # (- [How to Run the Project]&#40;#how-to-run-the-project&#41;)
 
@@ -20,12 +28,41 @@ This repository demonstrates the usage of various authentication methods when in
 In this project, we showcase the configuration and use of two popular authentication methods with **Feign Client**:
 
 1. **Basic Authentication**:
-   Basic authentication is a simple authentication scheme built into the HTTP protocol. In this example, a Feign Client is configured to send a username and password in the `Authorization` header in the form of `Basic base64(username:password)`.
+Basic authentication is a simple authentication scheme built into the HTTP protocol. In this example, 
+a Feign Client is configured to send a username and password in the `Authorization` header in the form of `Basic base64(username:password)`.
 
 2. **OAuth2 Authentication**:
-   OAuth2 is a more robust authorization framework. In this example, we configure Feign Client to use OAuth2 tokens to authenticate API requests, using Spring Security to handle OAuth2 token generation and validation.
+OAuth2 is a more robust authorization framework. In this example, we configure Feign Client to use OAuth2 tokens 
+to authenticate API requests, using `Spring Security` to handle `OAuth2 token` generation and validation.
 
-Both examples demonstrate how to create a custom Feign Client configuration to include the necessary authentication information in the request headers.
+3. **NTLM Authentication**:
+NTLM uses a three-step handshake (challenge-response mechanism) that involves sending and managing dynamically encoded messages
+in order to authenticate into the server.
+``org.apache.http`` library is used in order to build a custom ``Client`` which handles this authorization method
+
+4. **API Key Authentication**:
+API Key authentication involves including a static key with each API request. The key can be sent via a header, a query parameter, or a cookie.
+
+5. **JWT Based Authentication**:
+***JSON Web Tokens (JWT)*** are self-contained tokens that include encoded claims and are digitally signed (using either symmetric or asymmetric keys).
+In this setup, the Feign `Client` sends the JWT in the `Authorization` header.
+
+6. **Digest Authentication**:
+Digest authentication improves upon Basic Authentication by using a challenge–response mechanism where the credentials 
+are hashed along with a nonce (a random value) before being sent.
+
+7. **Mutual TLS Authentication**:
+Mutual TLS authentication involves both the client and the server authenticating each other using digital certificates during the SSL/TLS handshake.
+
+8. **HMAC (Hash-based Message Authentication Code)**:
+HMAC authentication relies on a shared `secret key` between the client and server. The client computes a hash (signature) 
+of the request data (which can include headers, query parameters, or the payload) and sends it along with the request. 
+The server then recomputes the hash to verify the request's integrity and authenticity.
+
+9. **SAML (Security Assertion Markup Language)**:
+SAML is an XML-based protocol often used for Single Sign-On (SSO) in enterprise environments. 
+It enables the exchange of authentication and authorization data between an identity provider and a service provider.
+
 
 ## Basic Authentication Example
 
@@ -200,3 +237,21 @@ public class NTLMClientConfig {
     public Logger.Level ntlmLoggerLevel() {return Logger.Level.FULL;}
 }
 ```
+
+## API Key Authentication Example
+
+
+
+## JWT Based Authentication Example
+
+
+## Digest Authentication Example
+
+
+## Mutual TLS Authentication Example
+
+
+## HMAC (Hash-based Message Authentication Code) Example
+
+
+## SAML (Security Assertion Markup Language) Example
