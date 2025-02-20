@@ -244,14 +244,27 @@ public class NTLMClientConfig {
 
 ## JWT Based Authentication Example
 
+#### WIP
+
 
 ## Digest Authentication Example
+
+#### WIP
 
 
 ## Mutual TLS Authentication Example
 
+#### WIP
+
+
 
 ## HMAC (Hash-based Message Authentication Code) Example
 
+#### WIP
+
+
 
 ## SAML (Security Assertion Markup Language) Example
+
+#### WIP
+
