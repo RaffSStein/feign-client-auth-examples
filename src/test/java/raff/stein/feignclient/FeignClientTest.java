@@ -38,14 +38,17 @@ public class FeignClientTest {
     // one for specific oauth2 API calls
     static WireMockServer oauth2ContentMockServer;
 
-    //NTLM
+    // NTLM
     static WireMockServer ntlmMockServer;
+
+    // API Key
+    static WireMockServer apiKeyMockServer;
 
 
     private static final String BASIC_AUTH_200_RESPONSE_STRING = "Basic auth response content";
     private static final String OAUTH_200_RESPONSE_STRING = "OAuth2 response content";
     private static final String NTLM_200_RESPONSE_STRING = "NTLM response content";
-
+    private static final String API_KEY_200_RESPONSE_STRING = "API KEY response content";
 
 
     @BeforeAll
@@ -53,6 +56,71 @@ public class FeignClientTest {
         setupBasicAuthServers();
         setupOauth2Servers();
         setupNTLMServer();
+        setupAPIKeyServer();
+    }
+
+    private static void setupBasicAuthServers() {
+        setupBasicAuthContentMockServer();
+    }
+
+    private static void setupOauth2Servers() {
+        setupOauth2MockServer();
+        setupOauth2ContentMockServer();
+    }
+
+    private static void setupOauth2ContentMockServer() {
+        oauth2ContentMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8083));
+        oauth2ContentMockServer.start();
+        oauth2ContentMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data")).willReturn(
+                        WireMock.aResponse()
+                                .withStatus(200)
+                                .withBody(OAUTH_200_RESPONSE_STRING))
+        );
+    }
+
+    private static void setupOauth2MockServer() {
+        oauth2AuthMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8084));
+        oauth2AuthMockServer.start();
+
+        oauth2AuthMockServer.stubFor(
+                WireMock.post(WireMock.urlEqualTo("/"))
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "application/json")
+                                .withHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate")
+                                .withBody("""
+                                        {
+                                        "access_token": "fake-token",
+                                        "token_type": "bearer",\s
+                                        "expires_in": "3598",\s
+                                        "scope": "service.genesis",\s
+                                        "jti": "fake-token"\s
+                                        }"""))
+        );
+
+    }
+
+
+    private static void setupBasicAuthContentMockServer() {
+        basicAuthContentMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8081));
+        basicAuthContentMockServer.start();
+        basicAuthContentMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data")).willReturn(
+                        WireMock.aResponse()
+                                .withStatus(200)
+                                .withBody(BASIC_AUTH_200_RESPONSE_STRING))
+        );
+    }
+
+    private static void setupAPIKeyServer() {
+        apiKeyMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8086));
+        apiKeyMockServer.start();
+        apiKeyMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data")).willReturn(
+                        WireMock.aResponse()
+                                .withStatus(200)
+                                .withBody(API_KEY_200_RESPONSE_STRING)));
     }
 
     private static void setupNTLMServer() {
@@ -115,61 +183,11 @@ public class FeignClientTest {
             oauth2ContentMockServer.stop();
         if(ntlmMockServer.isRunning())
             ntlmMockServer.stop();
-    }
-
-    private static void setupBasicAuthServers() {
-        setupBasicAuthContentMockServer();
-    }
-
-    private static void setupOauth2Servers() {
-        setupOauth2MockServer();
-        setupOauth2ContentMockServer();
-    }
-
-    private static void setupOauth2ContentMockServer() {
-        oauth2ContentMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8083));
-        oauth2ContentMockServer.start();
-        oauth2ContentMockServer.stubFor(
-                WireMock.get(WireMock.urlEqualTo("/get-data")).willReturn(
-                        WireMock.aResponse()
-                                .withStatus(200)
-                                .withBody(OAUTH_200_RESPONSE_STRING))
-        );
-    }
-
-    private static void setupOauth2MockServer() {
-        oauth2AuthMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8084));
-        oauth2AuthMockServer.start();
-
-        oauth2AuthMockServer.stubFor(
-                WireMock.post(WireMock.urlEqualTo("/"))
-                        .willReturn(WireMock.aResponse()
-                                .withStatus(200)
-                                .withHeader("Content-Type", "application/json")
-                                .withHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate")
-                                .withBody("""
-                                        {
-                                        "access_token": "fake-token",
-                                        "token_type": "bearer",\s
-                                        "expires_in": "3598",\s
-                                        "scope": "service.genesis",\s
-                                        "jti": "fake-token"\s
-                                        }"""))
-        );
-
+        if(apiKeyMockServer.isRunning())
+            apiKeyMockServer.stop();
     }
 
 
-    private static void setupBasicAuthContentMockServer() {
-        basicAuthContentMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8081));
-        basicAuthContentMockServer.start();
-        basicAuthContentMockServer.stubFor(
-                WireMock.get(WireMock.urlEqualTo("/get-data")).willReturn(
-                        WireMock.aResponse()
-                                .withStatus(200)
-                                .withBody(BASIC_AUTH_200_RESPONSE_STRING))
-        );
-    }
 
     @Test
     void testBasicAuthClient() throws Exception {
@@ -250,6 +268,33 @@ public class FeignClientTest {
                                     event.getRequest().getAbsoluteUrl().contains(":" + ntlmMockServer.getOptions().portNumber()));
 
                     Assertions.assertTrue(requestReceived, "No request found on ntlmMockServer");
+                });
+    }
+
+    @Test
+    void testApiKeyClient() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/api-key"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                .andExpect(MockMvcResultMatchers.content().string(API_KEY_200_RESPONSE_STRING));
+
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(2))
+                .untilAsserted(() -> {
+                    // check if we got a request for that url
+                    List<ServeEvent> events = apiKeyMockServer.getAllServeEvents();
+                    int numberOfRequestReceived = events.size();
+                    Assertions.assertEquals(1, numberOfRequestReceived);
+
+                    boolean requestReceived = events
+                            .stream()
+                            .anyMatch(event -> event.getRequest().getUrl().equals("/get-data") &&
+                                    event.getRequest().getAbsoluteUrl().contains(":" + apiKeyMockServer.getOptions().portNumber()));
+
+                    Assertions.assertTrue(requestReceived, "No request found on apiKeyMockServer");
                 });
     }
 }

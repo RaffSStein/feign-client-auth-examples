@@ -32,4 +32,10 @@ public class FeignClientSimpleController {
         return ResponseEntity.ok(responseString);
     }
 
+    @GetMapping("/api-key")
+    public ResponseEntity<String> getDataWithApiKey() {
+        final String responseString = feignClientSimpleService.simpleApiKeyClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
 }

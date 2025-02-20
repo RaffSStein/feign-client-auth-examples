@@ -19,6 +19,9 @@ spring:
           password: password
           workstation: workstation
           domain: domain
+        api-key:
+          host: http://localhost:8086
+          key: key
 logging:
   level:
     raff:
