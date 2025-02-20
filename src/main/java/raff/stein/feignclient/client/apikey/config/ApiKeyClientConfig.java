@@ -19,5 +19,5 @@ public class ApiKeyClientConfig {
     }
 
     @Bean
-    public Logger.Level basicAuthLoggerLevel() {return Logger.Level.FULL;}
+    public Logger.Level apiKeyAuthLoggerLevel() {return Logger.Level.FULL;}
 }

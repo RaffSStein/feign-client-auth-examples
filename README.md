@@ -25,7 +25,7 @@ The examples are showcased into a test class which simulates servers for each au
 
 ## Overview
 
-In this project, we showcase the configuration and use of two popular authentication methods with **Feign Client**:
+In this project, we showcase the configuration and use of the following authentication methods with **Feign Client**:
 
 1. **Basic Authentication**:
 Basic authentication is a simple authentication scheme built into the HTTP protocol. In this example, 
@@ -69,8 +69,8 @@ It enables the exchange of authentication and authorization data between an iden
 Basic Authentication sends the username and password encoded in base64 as part of the request's `Authorization` header.
 
 ### Feign Client Configuration (Basic Auth)
-To configure Basic authentication in Feign Client, we need to add a RequestInterceptor that includes the username and password
-(encoded) in the Authorization header of each request.
+To configure Basic authentication in Feign Client, we need to add a `RequestInterceptor` that includes the username and password
+(encoded) in the **Authorization** header of each request.
 In the example, the credentials are properties.
 
 
@@ -239,8 +239,44 @@ public class NTLMClientConfig {
 ```
 
 ## API Key Authentication Example
+**API key authentication** is a straightforward method for controlling access to an API. Here's how it works:
 
+1. **Issuance of the API Key**:
+A unique key is generated and provided to the client (e.g., an application or developer). This key acts as a credential 
+that identifies and authorizes the client.
 
+2. **Including the API Key in Requests**:
+The client includes the API key with every API request. Typically, this is done by adding it to an HTTP header 
+(commonly named something like X-API-KEY), although it can also be transmitted as a query parameter or, less commonly, in a cookie.
+
+3. **Server-Side Verification**:
+When the server receives a request, it extracts the API key from the header (or other location) and verifies it against
+a list of valid keys. If the key is valid, the server processes the request; if not, it returns an error 
+(often a 401 Unauthorized or 403 Forbidden).
+
+### Feign Client Configuration (API Key)
+
+To configure the Api-Key authentication in Feign Client, we need to add a `RequestInterceptor` that basically
+adds a custom header to our request, representing our API key for the API call.
+
+```java
+public class ApiKeyClientConfig {
+
+    @Value("${spring.application.rest.client.api-key.key}")
+    private String apiKey;
+
+    @Bean
+    public RequestInterceptor apiKeyRequestInterceptor() {
+        return requestTemplate -> {
+            // just pass the APIKey as header
+            requestTemplate.header("X-API-KEY", apiKey);
+        };
+    }
+
+    @Bean
+    public Logger.Level apiKeyAuthLoggerLevel() {return Logger.Level.FULL;}
+}
+```
 
 ## JWT Based Authentication Example
 
