@@ -22,6 +22,8 @@ spring:
         api-key:
           host: http://localhost:8086
           key: key
+        jwt:
+          host: http://localhost:8087
 logging:
   level:
     raff:

@@ -44,11 +44,16 @@ public class FeignClientTest {
     // API Key
     static WireMockServer apiKeyMockServer;
 
+    // JWT
+    static WireMockServer jwtMockServer;
+
 
     private static final String BASIC_AUTH_200_RESPONSE_STRING = "Basic auth response content";
     private static final String OAUTH_200_RESPONSE_STRING = "OAuth2 response content";
     private static final String NTLM_200_RESPONSE_STRING = "NTLM response content";
     private static final String API_KEY_200_RESPONSE_STRING = "API KEY response content";
+    private static final String JWT_200_RESPONSE_STRING = "JWT response content";
+
 
 
     @BeforeAll
@@ -57,6 +62,7 @@ public class FeignClientTest {
         setupOauth2Servers();
         setupNTLMServer();
         setupAPIKeyServer();
+        setupJWTServer();
     }
 
     private static void setupBasicAuthServers() {
@@ -169,6 +175,16 @@ public class FeignClientTest {
         );
     }
 
+    private static void setupJWTServer() {
+        jwtMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8087));
+        jwtMockServer.start();
+        jwtMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data")).willReturn(
+                        WireMock.aResponse()
+                                .withStatus(200)
+                                .withBody(JWT_200_RESPONSE_STRING)));
+    }
+
     @AfterAll
     static void afterAll() {
         stopWireMockServers();
@@ -185,6 +201,8 @@ public class FeignClientTest {
             ntlmMockServer.stop();
         if(apiKeyMockServer.isRunning())
             apiKeyMockServer.stop();
+        if(jwtMockServer.isRunning())
+            jwtMockServer.stop();
     }
 
 
@@ -295,6 +313,42 @@ public class FeignClientTest {
                                     event.getRequest().getAbsoluteUrl().contains(":" + apiKeyMockServer.getOptions().portNumber()));
 
                     Assertions.assertTrue(requestReceived, "No request found on apiKeyMockServer");
+                });
+    }
+
+    @Test
+    void testJWTClient() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/jwt")
+                        .header("Authorization", "Bearer mockToken"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                .andExpect(MockMvcResultMatchers.content().string(JWT_200_RESPONSE_STRING));
+
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(2))
+                .untilAsserted(() -> {
+                    // check if we got a request for that url
+                    List<ServeEvent> events = jwtMockServer.getAllServeEvents();
+                    int numberOfRequestReceived = events.size();
+                    Assertions.assertEquals(1, numberOfRequestReceived);
+
+                    boolean requestReceived = events
+                            .stream()
+                            .anyMatch(event -> event.getRequest().getUrl().equals("/get-data") &&
+                                    event.getRequest().getAbsoluteUrl().contains(":" + jwtMockServer.getOptions().portNumber()));
+
+                    Assertions.assertTrue(requestReceived, "No request found on jwtMockServer");
+
+                    // check that the authorization header is present and it's correct
+                    String authHeader = events.getFirst().getRequest().getHeader("Authorization");
+                    Assertions.assertNotNull(authHeader, "Authorization header is missing");
+                    Assertions.assertTrue(authHeader.startsWith("Bearer "), "Authorization header must start with 'Bearer '");
+                    Assertions.assertEquals("Bearer mockToken", authHeader, "Authorization header value is incorrect");
+
+
                 });
     }
 }

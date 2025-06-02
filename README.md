@@ -45,7 +45,7 @@ API Key authentication involves including a static key with each API request. Th
 
 5. **JWT Based Authentication**:
 ***JSON Web Tokens (JWT)*** are self-contained tokens that include encoded claims and are digitally signed (using either symmetric or asymmetric keys).
-In this setup, the Feign `Client` sends the JWT in the `Authorization` header.
+In this setup, the Feign `Client` sends the JWT in the `Authorization` header received in the original API call to the underlying system.
 
 6. **Digest Authentication**:
 Digest authentication improves upon Basic Authentication by using a challenge–response mechanism where the credentials 
@@ -279,10 +279,47 @@ public class ApiKeyClientConfig {
 ```
 
 ## JWT Based Authentication Example
+JWT (JSON Web Token) authentication is a widely adopted method for securely transmitting information between parties as a JSON object. JWTs are commonly used for authorization, where the token is issued by an authentication server and then used by clients to access protected resources.
+How it Works:
+1. **Token Issuance**: 
+The client authenticates (e.g., using credentials) with an Authorization Server, which issues a signed JWT.
+This token contains claims (such as user identity and roles) and is cryptographically signed to prevent tampering.
 
-#### WIP
+2. **Token Forwarding**:
+For each subsequent request to protected resources, the client includes the JWT in the HTTP Authorization header, using the Bearer schema:
+``Authorization: Bearer <your-jwt-token>``
 
+3. **Server Verification**:
+The receiving server verifies the JWT’s signature, expiration time, and claims to ensure the token is valid and trusted.
+If valid, access is granted; otherwise, a 401 Unauthorized response is returned.
 
+### Feign Client Configuration (JWT)
+In this example, we assume that our Spring Boot application receives a request that already includes a valid ``Authorization: Bearer <token>`` header.
+We want our Feign client to forward this JWT to the downstream service so that it can perform its own authorization checks.
+
+To achieve this, we define a ``RequestInterceptor`` that extracts the JWT from the incoming HTTP request and sets it in the outgoing Feign call:
+```java
+public class JwtClientConfig {
+
+    // the client will forward the JWT token received in the API request to the underlying system
+    // which, we suppose, will have an auth check on its side
+    @Bean
+    public RequestInterceptor jwtForwardingInterceptor() {
+        return requestTemplate -> {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) return;
+
+            HttpServletRequest request = attributes.getRequest();
+            String authorizationHeader = request.getHeader("Authorization");
+
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                requestTemplate.header("Authorization", authorizationHeader);
+            }
+        };
+    }
+}
+
+```
 ## Digest Authentication Example
 
 #### WIP

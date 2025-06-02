@@ -3,6 +3,7 @@ package raff.stein.feignclient.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import raff.stein.feignclient.service.FeignClientSimpleService;
@@ -35,6 +36,12 @@ public class FeignClientSimpleController {
     @GetMapping("/api-key")
     public ResponseEntity<String> getDataWithApiKey() {
         final String responseString = feignClientSimpleService.simpleApiKeyClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
+    @GetMapping("/jwt")
+    public ResponseEntity<String> getDataWithJwt(@RequestHeader("Authorization") String authHeader) {
+        final String responseString = feignClientSimpleService.simpleJwtClientCall();
         return ResponseEntity.ok(responseString);
     }
 
