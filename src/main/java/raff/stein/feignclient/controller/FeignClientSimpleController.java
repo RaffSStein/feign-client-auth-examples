@@ -45,4 +45,10 @@ public class FeignClientSimpleController {
         return ResponseEntity.ok(responseString);
     }
 
+    @GetMapping("/digest")
+    public ResponseEntity<String> getDataWithDigest() {
+        final String responseString = feignClientSimpleService.simpleDigestClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import raff.stein.feignclient.client.apikey.ApiKeyClient;
 import raff.stein.feignclient.client.basicauth.BasicAuthClient;
+import raff.stein.feignclient.client.digest.DigestApacheClient;
 import raff.stein.feignclient.client.jwt.JwtClient;
 import raff.stein.feignclient.client.ntlm.NTLMClient;
 import raff.stein.feignclient.client.oauth2.OAuth2Client;
@@ -19,6 +20,7 @@ public class FeignClientSimpleService {
     private final NTLMClient ntlmClient;
     private final ApiKeyClient apiKeyClient;
     private final JwtClient jwtClient;
+    private final DigestApacheClient digestApacheClient;
 
     public String simpleBasicAuthClientCall() {
         return basicAuthClient.getData();
@@ -38,6 +40,12 @@ public class FeignClientSimpleService {
 
     public String simpleJwtClientCall() {
         return jwtClient.getData();
+    }
+
+    public String simpleDigestClientCall() {
+        String firstResult = digestApacheClient.getFirstContent();
+        String secondResult = digestApacheClient.getSecondContent();
+        return firstResult + secondResult;
     }
 
 }

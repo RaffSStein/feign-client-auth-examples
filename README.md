@@ -291,7 +291,7 @@ For each subsequent request to protected resources, the client includes the JWT 
 
 3. **Server Verification**:
 The receiving server verifies the JWT’s signature, expiration time, and claims to ensure the token is valid and trusted.
-If valid, access is granted; otherwise, a 401 Unauthorized response is returned.
+If valid, access is granted; otherwise, a ``401 Unauthorized`` response is returned.
 
 ### Feign Client Configuration (JWT)
 In this example, we assume that our Spring Boot application receives a request that already includes a valid ``Authorization: Bearer <token>`` header.
@@ -321,9 +321,67 @@ public class JwtClientConfig {
 
 ```
 ## Digest Authentication Example
+**Digest Authentication** is a challenge-response mechanism defined by ***RFC 7616***, where the client proves knowledge of a
+password without sending it in plaintext. It's a more secure alternative to Basic Auth, as it protects credentials using
+hashing and nonce-based mechanisms.
+How it works:
+How it Works:
+1. **Initial Challenge:**
+The client makes an unauthenticated request to the server. The server responds with a ``401 Unauthorized`` status and a
+``WWW-Authenticate`` header containing the digest challenge (realm, nonce, opaque, etc.).
 
-#### WIP
+2. **Digest Response:**
+The client computes a hash (digest) of the username, password, and challenge parameters, and resends the request with
+an ``Authorization: Digest ...`` header containing the computed response.
 
+3. **Authentication Success:**
+The server verifies the digest response. If valid, it returns a ``200 OK`` and the requested resource. 
+Otherwise, another ``401`` is issued.
+
+### Implementation Notes:
+- In this example, we do not use a Feign client because Apache HttpClient provides more precise control over the
+Digest scheme negotiation.
+
+- The client initializes a ``DigestScheme`` using the first ``401`` response and then reuses this authentication context
+``(HttpClientContext)`` across subsequent requests using an ``AuthCache``.
+
+- This avoids redundant challenge-response handshakes after the first authenticated request.
+
+### Apache HttpClient Configuration
+Here's the key part of the implementation (simplified):
+```java
+// Provides the credentials (username and password) for a specific AuthScope
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(
+                new AuthScope(host, port),
+                new UsernamePasswordCredentials(username, password)
+        );
+        // Register the Digest authentication scheme (needed explicitly)
+        Lookup<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
+                .register(AuthSchemes.DIGEST, new DigestSchemeFactory())
+                .build();
+        // Build the HTTP client with the credentials and scheme
+        this.httpClient = HttpClients.custom()
+                .setDefaultCredentialsProvider(credentialsProvider)
+                .setDefaultAuthSchemeRegistry(authSchemeRegistry)
+                .build();
+```
+Then, a first unauthenticated request is performed explicitly to force the ``401 Unauthorized``, and the server's 
+challenge is processed manually:
+```java
+DigestScheme digestScheme = new DigestScheme();
+digestScheme.processChallenge(wwwAuthHeaderFrom401);
+
+AuthCache authCache = new BasicAuthCache();
+authCache.put(targetHost, digestScheme);
+
+HttpClientContext context = HttpClientContext.create();
+context.setAuthCache(authCache);
+```
+Finally, this context is reused in all subsequent authenticated requests:
+```java
+httpClient.execute(targetHost, request, reusableContext);
+```
 
 ## Mutual TLS Authentication Example
 
