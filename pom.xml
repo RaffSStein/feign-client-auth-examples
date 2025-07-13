@@ -19,11 +19,11 @@
         <maven.compiler.source>23</maven.compiler.source>
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.4.1</spring-boot.version>
-        <spring-boot-devtools.version>3.4.1</spring-boot-devtools.version>
-        <spring-boot-starter-test.version>3.4.1</spring-boot-starter-test.version>
-        <lombok.version>1.18.36</lombok.version>
-        <jackson-core-databind.version>2.18.2</jackson-core-databind.version>
+        <spring-boot.version>3.5.3</spring-boot.version>
+        <spring-boot-devtools.version>3.5.3</spring-boot-devtools.version>
+        <spring-boot-starter-test.version>3.5.3</spring-boot-starter-test.version>
+        <lombok.version>1.18.38</lombok.version>
+        <jackson-core-databind.version>2.19.1</jackson-core-databind.version>
     </properties>
 
     <dependencies>
@@ -77,7 +77,7 @@
             <version>3.2.0</version>
         </dependency>
 
-        <!-- testcontainers probably not needed -->
+        <!-- testcontainers for Awaitility -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -108,7 +108,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Test containers, probably to remove -->
+            <!-- Test containers -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>

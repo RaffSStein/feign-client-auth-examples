@@ -24,13 +24,15 @@ spring:
           key: key
         jwt:
           host: http://localhost:8087
+        digest-auth:
+          host: http://localhost:8088
+          username: user
+          password: password
 logging:
   level:
     raff:
       stein:
-        feignclient:
-          DEBUG
+        feignclient: DEBUG
     org:
       apache:
-        http:
-          TRACE
+        http: TRACE

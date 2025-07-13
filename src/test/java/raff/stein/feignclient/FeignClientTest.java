@@ -23,7 +23,7 @@ import java.util.List;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-public class FeignClientTest {
+class FeignClientTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,12 +47,17 @@ public class FeignClientTest {
     // JWT
     static WireMockServer jwtMockServer;
 
+    // DIGEST AUTH
+    static WireMockServer digestMockServer;
+
 
     private static final String BASIC_AUTH_200_RESPONSE_STRING = "Basic auth response content";
     private static final String OAUTH_200_RESPONSE_STRING = "OAuth2 response content";
     private static final String NTLM_200_RESPONSE_STRING = "NTLM response content";
     private static final String API_KEY_200_RESPONSE_STRING = "API KEY response content";
     private static final String JWT_200_RESPONSE_STRING = "JWT response content";
+    private static final String DIGEST_200_FIRST_RESPONSE_STRING = "Digest first response content";
+    private static final String DIGEST_200_SECOND_RESPONSE_STRING = "Digest second response content";
 
 
 
@@ -63,7 +68,9 @@ public class FeignClientTest {
         setupNTLMServer();
         setupAPIKeyServer();
         setupJWTServer();
+        setupDigestServer();
     }
+
 
     private static void setupBasicAuthServers() {
         setupBasicAuthContentMockServer();
@@ -185,6 +192,56 @@ public class FeignClientTest {
                                 .withBody(JWT_200_RESPONSE_STRING)));
     }
 
+    private static void setupDigestServer() {
+        // Initialize and start a WireMock server on port 8088
+        digestMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8088));
+        digestMockServer.start();
+        // === STEP 1: Simulate an initial Digest Authentication challenge ===
+        digestMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/auth"))
+                        // Define a WireMock scenario to manage stateful mocking
+                        .inScenario("Digest Auth")
+                        .whenScenarioStateIs(Scenario.STARTED)
+                        .willReturn(WireMock.aResponse()
+                                // Force client to receive 401 Unauthorized
+                                .withStatus(401)
+                                // Digest challenge header, including realm, nonce, and opaque
+                                .withHeader("WWW-Authenticate ",
+                                        "Digest realm=\"localhost\", " +
+                                                "qop=\"auth\", " +
+                                                "nonce=\"testnonce\", " +
+                                                "opaque=\"testopaque\"")
+                                .withBody("Unauthorized"))
+                        // Move scenario into authenticated state after this 401 is served
+                        .willSetStateTo("CHALLENGE_SENT")
+        );
+        // === STEP 2: Accept the first authenticated request ===
+        digestMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-first-content"))
+                        .inScenario("Digest Auth")
+                        // Only allow after challenge sent
+                        .whenScenarioStateIs("CHALLENGE_SENT")
+                        // Must contain Digest Authorization header
+                        .withHeader("Authorization", WireMock.matching("Digest\\s+.*"))
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withBody(DIGEST_200_FIRST_RESPONSE_STRING))
+        );
+        // === STEP 3: Accept the second authenticated request ===
+        digestMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-second-content"))
+                        .inScenario("Digest Auth")
+                        // Still in authenticated state
+                        .whenScenarioStateIs("CHALLENGE_SENT")
+                        .withHeader("Authorization", WireMock.matching("Digest\\s+.*"))
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withBody(DIGEST_200_SECOND_RESPONSE_STRING))
+        );
+    }
+
+
+
     @AfterAll
     static void afterAll() {
         stopWireMockServers();
@@ -203,6 +260,8 @@ public class FeignClientTest {
             apiKeyMockServer.stop();
         if(jwtMockServer.isRunning())
             jwtMockServer.stop();
+        if(digestMockServer.isRunning())
+            digestMockServer.stop();
     }
 
 
@@ -351,4 +410,56 @@ public class FeignClientTest {
 
                 });
     }
+
+    @Test
+    void testDigestAuthClient() throws Exception {
+        // === Trigger the controller endpoint that internally uses the DigestApacheClient ===
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/digest"))
+                .andDo(MockMvcResultHandlers.print())
+                // Expect overall response to be successful (2xx)
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                // Expect response body to match concatenation of two successful responses
+                .andExpect(MockMvcResultMatchers.content().string(DIGEST_200_FIRST_RESPONSE_STRING + DIGEST_200_SECOND_RESPONSE_STRING));
+
+        // === Awaitility block ensures async events are completed (e.g., all WireMock events) ===
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(2))
+                .untilAsserted(() -> {
+                    // === Collect all requests handled by WireMock ===
+                    List<ServeEvent> events = digestMockServer.getAllServeEvents();
+
+                    // Expect exactly 3 requests: 1 to /auth, 2 to protected endpoints
+                    int numberOfRequestReceived = events.size();
+
+                    Assertions.assertEquals(3, numberOfRequestReceived);
+
+                    // === Assert only one call to /auth for the initial digest challenge ===
+                    long authCalls = events.stream()
+                            .filter(event -> event.getRequest().getUrl().equals("/auth"))
+                            .count();
+
+                    Assertions.assertEquals(1, authCalls, "The /auth endpoint should be called exactly once");
+
+                    // === Assert that no 401 errors occurred during /get-first-content and /get-second-content ===
+                    long unauthorizedCalls = events.stream()
+                            .filter(event -> (event.getRequest().getUrl().equals("/get-first-content") ||
+                                    event.getRequest().getUrl().equals("/get-second-content")) &&
+                                    event.getResponse().getStatus() == 401)
+                            .count();
+
+                    Assertions.assertEquals(0, unauthorizedCalls, "No 401 responses expected on subsequent calls");
+
+                    // === Ensure all protected calls include the Authorization header ===
+                    boolean allHaveAuthHeader = events.stream()
+                            .filter(event -> event.getRequest().getUrl().equals("/get-first-content") ||
+                                    event.getRequest().getUrl().equals("/get-second-content"))
+                            .allMatch(event -> event.getRequest().getHeaders().getHeader("Authorization").isPresent());
+
+                    Assertions.assertTrue(allHaveAuthHeader, "All subsequent requests must include the Authorization header");
+
+                });
+    }
+
 }
