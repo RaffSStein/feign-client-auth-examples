@@ -51,4 +51,10 @@ public class FeignClientSimpleController {
         return ResponseEntity.ok(responseString);
     }
 
+    @GetMapping("/mutual-tls")
+    public ResponseEntity<String> getDataWithMutualTls() {
+        final String responseString = feignClientSimpleService.simpleMutualTlsClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
 }

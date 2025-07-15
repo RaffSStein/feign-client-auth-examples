@@ -29,7 +29,7 @@ spring:
           username: user
           password: password
         mutual-tls:
-          host: http://localhost:8089
+          host: https://localhost:8089
           ssl:
             keystore:
               path: keystorePath

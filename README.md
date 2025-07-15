@@ -324,7 +324,6 @@ public class JwtClientConfig {
 **Digest Authentication** is a challenge-response mechanism defined by ***RFC 7616***, where the client proves knowledge of a
 password without sending it in plaintext. It's a more secure alternative to Basic Auth, as it protects credentials using
 hashing and nonce-based mechanisms.
-How it works:
 How it Works:
 1. **Initial Challenge:**
 The client makes an unauthenticated request to the server. The server responds with a ``401 Unauthorized`` status and a
@@ -384,10 +383,74 @@ httpClient.execute(targetHost, request, reusableContext);
 ```
 
 ## Mutual TLS Authentication Example
+**Mutual TLS (mTLS)** is an extension of standard TLS in which both client and server authenticate each other using certificates.
+This enhances security by ensuring that not only the server is trusted by the client, but the client is also verified by 
+the server — enabling strong identity verification and secure communication. How it Works:
+1. **TLS Handshake Initialization:**
+The client initiates a secure connection over ``HTTPS``. The server responds with its certificate, as in standard ``TLS``.
 
-#### WIP
+2. **Client Certificate Request:**
+Since mTLS is enabled, the server requests a certificate from the client.
 
+3. **Client Authentication:**
+The client sends its certificate (signed by a trusted CA or self-signed for testing), proving its identity.
 
+4. **Verification:**
+The server verifies the client certificate against its truststore. If valid, the ``TLS`` handshake completes.
+
+5. **Secure Communication:**
+Once mutual authentication succeeds, encrypted communication continues over the established TLS session.
+
+### Implementation Notes:
+
+In this example, we configure a ``WireMock`` server with:
+
+- A keystore containing its private key and certificate. 
+- A truststore to validate the client certificate. 
+- Client authentication explicitly required via ``needClientAuth(true)``.
+
+On the client side, we configure the ``Feign HTTP client`` with:
+- A truststore to validate the server certificate. 
+- A keystore with the client's own certificate for mutual authentication.
+
+### WireMock Configuration (Server Side)
+```java
+mutualTlsMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig()
+    .httpsPort(8089)
+    .needClientAuth(true)
+    .trustStorePath("server-truststore.jks")
+    .trustStorePassword("changeit")
+    .trustStoreType("PKCS12")
+    .keystorePath("server-keystore.jks")
+    .keystorePassword("changeit")
+    .keystoreType("PKCS12")
+);
+mutualTlsMockServer.start();
+```
+
+### Feign Client Configuration (Client Side)
+The client HTTP configuration is built using Apache ``HttpClient``, enabling ``SS``L context with both keystore and truststore:
+```java
+SSLContext sslContext = SSLContexts.custom()
+    .loadTrustMaterial(truststorePath, truststorePassword.toCharArray())
+    .loadKeyMaterial(keystorePath, keystorePassword.toCharArray(), keystorePassword.toCharArray())
+    .build();
+
+SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
+CloseableHttpClient httpClient = HttpClients.custom()
+    .setSSLSocketFactory(socketFactory)
+    .build();
+```
+Then, this client is injected into a Feign builder:
+```java
+Feign.builder()
+    .client(new ApacheHttpClient(httpClient))
+    .target(MutualTlsClient.class, "https://localhost:8089");
+```
+### Test Scenario
+- The test performs a ``GET /get-data`` request using the mTLS-enabled ``Feign client``. 
+- The WireMock server is configured to require and validate the client certificate. 
+- If mutual authentication succeeds, the server returns a ``200 OK`` and a stubbed response body.
 
 ## HMAC (Hash-based Message Authentication Code) Example
 
