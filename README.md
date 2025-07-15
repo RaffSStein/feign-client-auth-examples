@@ -13,7 +13,7 @@ The examples are showcased into a test class which simulates servers for each au
 - [API Key Authentication Example](#api-key-authentication-example)
 - [JWT Based Authentication Example](#jwt-based-authentication-example)
 - [Digest Authentication Example](#digest-authentication-example)
-- [Mutual TLS Authentication Example](#digest-authentication-example)
+- [Mutual TLS Authentication Example](#mutual-tls-authentication-example)
 - [HMAC (Hash-based Message Authentication Code) Example](#hmac-hash-based-message-authentication-code-example)
 - [SAML (Security Assertion Markup Language) Example](#saml-security-assertion-markup-language-example)
 
