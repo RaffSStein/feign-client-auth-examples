@@ -7,6 +7,7 @@ import raff.stein.feignclient.client.apikey.ApiKeyClient;
 import raff.stein.feignclient.client.basicauth.BasicAuthClient;
 import raff.stein.feignclient.client.digest.DigestApacheClient;
 import raff.stein.feignclient.client.jwt.JwtClient;
+import raff.stein.feignclient.client.mutualtls.MutualTlsClient;
 import raff.stein.feignclient.client.ntlm.NTLMClient;
 import raff.stein.feignclient.client.oauth2.OAuth2Client;
 
@@ -21,6 +22,7 @@ public class FeignClientSimpleService {
     private final ApiKeyClient apiKeyClient;
     private final JwtClient jwtClient;
     private final DigestApacheClient digestApacheClient;
+    private final MutualTlsClient mutualTlsClient;
 
     public String simpleBasicAuthClientCall() {
         return basicAuthClient.getData();
@@ -47,5 +49,10 @@ public class FeignClientSimpleService {
         String secondResult = digestApacheClient.getSecondContent();
         return firstResult + secondResult;
     }
+
+    public String simpleMutualTlsClientCall() {
+        return mutualTlsClient.getData();
+    }
+
 
 }

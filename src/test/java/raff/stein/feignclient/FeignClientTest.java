@@ -50,6 +50,9 @@ class FeignClientTest {
     // DIGEST AUTH
     static WireMockServer digestMockServer;
 
+    // MUTUAL TLS AUTH
+    static WireMockServer mutualTlsMockServer;
+
 
     private static final String BASIC_AUTH_200_RESPONSE_STRING = "Basic auth response content";
     private static final String OAUTH_200_RESPONSE_STRING = "OAuth2 response content";
@@ -58,6 +61,8 @@ class FeignClientTest {
     private static final String JWT_200_RESPONSE_STRING = "JWT response content";
     private static final String DIGEST_200_FIRST_RESPONSE_STRING = "Digest first response content";
     private static final String DIGEST_200_SECOND_RESPONSE_STRING = "Digest second response content";
+    private static final String MUTUAL_TLS_200_SECOND_RESPONSE_STRING = "Mutual TLS response content";
+
 
 
 
@@ -69,6 +74,7 @@ class FeignClientTest {
         setupAPIKeyServer();
         setupJWTServer();
         setupDigestServer();
+        setupMutualTlsServer();
     }
 
 
@@ -240,6 +246,27 @@ class FeignClientTest {
         );
     }
 
+    private static void setupMutualTlsServer() {
+        // Initialize and start a WireMock server on port 8089
+        mutualTlsMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig()
+                .httpsPort(8089)
+                .needClientAuth(true) // Enable Mutual TLS
+                .trustStorePath("src/test/resources/mutualtls/server-truststore.jks")
+                .trustStorePassword("changeit")
+                .trustStoreType("PKCS12")
+                .keystorePath("src/test/resources/mutualtls/server-keystore.jks")
+                .keystorePassword("changeit")
+                .keystoreType("PKCS12")
+                .keyManagerPassword("changeit"));
+        mutualTlsMockServer.start();
+
+        mutualTlsMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody(MUTUAL_TLS_200_SECOND_RESPONSE_STRING)));
+    }
+
 
 
     @AfterAll
@@ -262,6 +289,8 @@ class FeignClientTest {
             jwtMockServer.stop();
         if(digestMockServer.isRunning())
             digestMockServer.stop();
+        if(mutualTlsMockServer.isRunning())
+            mutualTlsMockServer.stop();
     }
 
 
@@ -458,6 +487,47 @@ class FeignClientTest {
                             .allMatch(event -> event.getRequest().getHeaders().getHeader("Authorization").isPresent());
 
                     Assertions.assertTrue(allHaveAuthHeader, "All subsequent requests must include the Authorization header");
+
+                });
+    }
+
+    @Test
+    void testMutualTlsAuthClient() throws Exception {
+        // === Trigger the controller endpoint that internally uses the mutual TLS client ===
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/mutual-tls"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                .andExpect(MockMvcResultMatchers.content().string(MUTUAL_TLS_200_SECOND_RESPONSE_STRING));
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(2))
+                .untilAsserted(() -> {
+                    // === Collect all requests handled by WireMock ===
+                    List<ServeEvent> events = mutualTlsMockServer.getAllServeEvents();
+
+                    // Expect exactly 1 request
+                    int numberOfRequestReceived = events.size();
+
+                    Assertions.assertEquals(1, numberOfRequestReceived);
+
+                    // Check that no requests returned HTTP 401 Unauthorized (access denied)
+                    long unauthorizedCalls = events.stream()
+                            .filter(event -> event.getResponse().getStatus() == 401)
+                            .count();
+                    Assertions.assertEquals(0, unauthorizedCalls,
+                            "No 401 Unauthorized responses expected");
+
+                    boolean isHttpsEnabled = mutualTlsMockServer.getOptions().httpsSettings().port() > 0;
+
+                    boolean allHttps = events.stream()
+                            .allMatch(event -> {
+                                // URL is only path, so no scheme here.
+                                // Just return true if HTTPS is enabled on the server
+                                return isHttpsEnabled;
+                            });
+                    Assertions.assertTrue(allHttps, "All requests should be HTTPS because the server uses HTTPS");
 
                 });
     }

@@ -28,6 +28,15 @@ spring:
           host: http://localhost:8088
           username: user
           password: password
+        mutual-tls:
+          host: https://localhost:8089
+          ssl:
+            keystore:
+              path: src/test/resources/mutualtls/server-keystore.jks
+              password: changeit
+            truststore:
+              path: src/test/resources/mutualtls/server-truststore.jks
+              password: changeit
 logging:
   level:
     raff:
