@@ -28,3 +28,12 @@ spring:
           host: http://localhost:8088
           username: user
           password: password
+        mutual-tls:
+          host: http://localhost:8089
+          ssl:
+            keystore:
+              path: keystorePath
+              password: keystorePassword
+            truststore:
+              path: truststorePath
+              password: truststorePassword
