@@ -37,6 +37,9 @@ spring:
             truststore:
               path: src/test/resources/mutualtls/server-truststore.jks
               password: changeit
+        hmac:
+          host: http://localhost:8090
+          secret: hmacKey
 logging:
   level:
     raff:

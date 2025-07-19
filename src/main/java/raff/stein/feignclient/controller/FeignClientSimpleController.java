@@ -57,4 +57,10 @@ public class FeignClientSimpleController {
         return ResponseEntity.ok(responseString);
     }
 
+    @GetMapping("/hmac")
+    public ResponseEntity<String> getDataWithHmac() {
+        final String responseString = feignClientSimpleService.simpleHashBasedMessageAuthClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
 }
