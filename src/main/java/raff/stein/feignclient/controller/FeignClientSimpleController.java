@@ -63,4 +63,10 @@ public class FeignClientSimpleController {
         return ResponseEntity.ok(responseString);
     }
 
+    @GetMapping("/saml")
+    public ResponseEntity<String> getDataWithSaml() {
+        final String responseString = feignClientSimpleService.simpleSamlClientCall();
+        return ResponseEntity.ok(responseString);
+    }
+
 }

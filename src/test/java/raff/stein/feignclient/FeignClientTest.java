@@ -56,6 +56,9 @@ class FeignClientTest {
     // HMAC AUTH
     static WireMockServer hmacMockServer;
 
+    // SAML
+    static WireMockServer samlMockServer;
+
 
     private static final String BASIC_AUTH_200_RESPONSE_STRING = "Basic auth response content";
     private static final String OAUTH_200_RESPONSE_STRING = "OAuth2 response content";
@@ -66,6 +69,7 @@ class FeignClientTest {
     private static final String DIGEST_200_SECOND_RESPONSE_STRING = "Digest second response content";
     private static final String MUTUAL_TLS_200_SECOND_RESPONSE_STRING = "Mutual TLS response content";
     private static final String HMAC_200_RESPONSE_STRING = "HMAC response content";
+    private static final String SAML_200_RESPONSE_STRING = "SAML response content";
 
 
 
@@ -80,6 +84,7 @@ class FeignClientTest {
         setupDigestServer();
         setupMutualTlsServer();
         setupHmacServer();
+        setupSamlServer();
     }
 
 
@@ -294,6 +299,28 @@ class FeignClientTest {
         );
     }
 
+    private static void setupSamlServer() {
+        samlMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8091));
+        samlMockServer.start();
+        samlMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                        .withHeader("SAMLAssertion", WireMock.matching(".+"))
+                        .willReturn(
+                                WireMock.aResponse()
+                                        .withStatus(200)
+                                        .withBody(SAML_200_RESPONSE_STRING)
+                        ));
+        // Stub for missing SAML assertion
+        samlMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                        .atPriority(1)
+                        .withHeader("SAMLAssertion", WireMock.absent())
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(401)
+                                .withBody("Missing SAML assertion"))
+        );
+    }
+
 
 
     @AfterAll
@@ -320,6 +347,8 @@ class FeignClientTest {
             mutualTlsMockServer.stop();
         if(hmacMockServer.isRunning())
             hmacMockServer.stop();
+        if(samlMockServer.isRunning())
+            samlMockServer.stop();
     }
 
 
@@ -588,6 +617,36 @@ class FeignClientTest {
                     String hmacHeader = events.getFirst().getRequest().getHeader("X-HMAC-SIGNATURE");
                     Assertions.assertNotNull(hmacHeader, "X-HMAC-SIGNATURE header is missing");
                     Assertions.assertFalse(hmacHeader.isBlank(), "X-HMAC-SIGNATURE header is blank");
+                });
+    }
+
+    @Test
+    void testSamlAuthClient() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/saml"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                .andExpect(MockMvcResultMatchers.content().string(SAML_200_RESPONSE_STRING));
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(2))
+                .untilAsserted(() -> {
+                    List<ServeEvent> events = samlMockServer.getAllServeEvents();
+                    int numberOfRequestReceived = events.size();
+                    Assertions.assertEquals(1, numberOfRequestReceived);
+
+                    boolean requestReceived = events
+                            .stream()
+                            .anyMatch(event -> event.getRequest().getUrl().equals("/get-data") &&
+                                    event.getRequest().getAbsoluteUrl().contains(":" + samlMockServer.getOptions().portNumber()));
+
+                    Assertions.assertTrue(requestReceived, "No request found on samlMockServer");
+
+                    // check SAMLAssertion header presence and value
+                    String samlHeader = events.getFirst().getRequest().getHeader("SAMLAssertion");
+                    Assertions.assertNotNull(samlHeader, "SAMLAssertion header is missing");
+                    Assertions.assertFalse(samlHeader.isBlank(), "SAMLAssertion header is blank");
                 });
     }
 

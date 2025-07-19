@@ -11,6 +11,7 @@ import raff.stein.feignclient.client.jwt.JwtClient;
 import raff.stein.feignclient.client.mutualtls.MutualTlsClient;
 import raff.stein.feignclient.client.ntlm.NTLMClient;
 import raff.stein.feignclient.client.oauth2.OAuth2Client;
+import raff.stein.feignclient.client.saml.SAMLClient;
 
 @Service
 @Slf4j
@@ -25,6 +26,7 @@ public class FeignClientSimpleService {
     private final DigestApacheClient digestApacheClient;
     private final MutualTlsClient mutualTlsClient;
     private final HashBasedMessageAuthClient hashBasedMessageAuthClient;
+    private final SAMLClient samlClient;
 
     public String simpleBasicAuthClientCall() {
         return basicAuthClient.getData();
@@ -60,5 +62,8 @@ public class FeignClientSimpleService {
         return hashBasedMessageAuthClient.getData();
     }
 
+    public String simpleSamlClientCall() {
+        return samlClient.getData();
+    }
 
 }

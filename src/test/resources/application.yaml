@@ -40,6 +40,9 @@ spring:
         hmac:
           host: http://localhost:8090
           secret: hmacKey
+        saml:
+          host: http://localhost:8091
+          saml-assertion: dummy-saml-assertion
 logging:
   level:
     raff:

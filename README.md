@@ -486,4 +486,48 @@ In the test, the Feign client sends a request with the `X-HMAC-SIGNATURE` header
 
 ## SAML (Security Assertion Markup Language) Example
 
-#### WIP
+SAML is an XML-based protocol often used for Single Sign-On (SSO) in enterprise environments. 
+It enables the exchange of authentication and authorization data between an identity provider and a service provider.
+
+> **Educational Note:**  
+> The usage of SAML in this Feign Client example is purely for educational purposes.  
+> In real-world scenarios, SAML authentication is typically handled via browser redirects between the frontend, the Identity Provider (IdP), and the Service Provider (SP).  
+> The backend does not authenticate itself to other services using SAML, but rather validates SAML assertions received from the frontend after the user has authenticated with the IdP.  
+> Here, the Feign Client simply forwards or validates a SAML assertion that has already been obtained, and does not perform the full SAML authentication flow.
+
+### Feign Client Configuration (SAML)
+
+To configure SAML authentication in Feign Client, we use a `RequestInterceptor` that adds a SAML assertion as a custom header (e.g., `SAMLAssertion`) to each request.
+
+Example configuration:
+
+```java
+public class SAMLClientConfig {
+
+    @Value("${spring.application.rest.client.saml.saml-assertion}")
+    private String samlAssertion;
+
+    @Bean
+    public RequestInterceptor samlRequestInterceptor() {
+        return requestTemplate -> {
+            // Add the SAML assertion as a header (commonly "SAMLAssertion")
+            requestTemplate.header("SAMLAssertion", samlAssertion);
+        };
+    }
+
+    @Bean
+    public Logger.Level samlLoggerLevel() {
+        return Logger.Level.FULL;
+    }
+}
+```
+
+> **Disclaimer:**  
+> This approach does not represent a real SAML authentication flow.  
+> In production, SAML assertions are obtained via browser-based SSO and validated by the backend, not generated or sent by the backend itself to other services.
+
+### Test Scenario
+
+- The test performs a `GET /saml` request using the SAML-enabled Feign client.
+- The WireMock server checks for the `SAMLAssertion` header and returns a `200 OK` if present.
+- The test asserts that the header is present and the response is as expected.
