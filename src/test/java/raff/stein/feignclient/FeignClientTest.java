@@ -53,6 +53,9 @@ class FeignClientTest {
     // MUTUAL TLS AUTH
     static WireMockServer mutualTlsMockServer;
 
+    // HMAC AUTH
+    static WireMockServer hmacMockServer;
+
 
     private static final String BASIC_AUTH_200_RESPONSE_STRING = "Basic auth response content";
     private static final String OAUTH_200_RESPONSE_STRING = "OAuth2 response content";
@@ -62,6 +65,7 @@ class FeignClientTest {
     private static final String DIGEST_200_FIRST_RESPONSE_STRING = "Digest first response content";
     private static final String DIGEST_200_SECOND_RESPONSE_STRING = "Digest second response content";
     private static final String MUTUAL_TLS_200_SECOND_RESPONSE_STRING = "Mutual TLS response content";
+    private static final String HMAC_200_RESPONSE_STRING = "HMAC response content";
 
 
 
@@ -75,6 +79,7 @@ class FeignClientTest {
         setupJWTServer();
         setupDigestServer();
         setupMutualTlsServer();
+        setupHmacServer();
     }
 
 
@@ -267,6 +272,28 @@ class FeignClientTest {
                         .withBody(MUTUAL_TLS_200_SECOND_RESPONSE_STRING)));
     }
 
+    private static void setupHmacServer() {
+        hmacMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8090));
+        hmacMockServer.start();
+        hmacMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                        .withHeader("X-HMAC-SIGNATURE",  WireMock.matching(".+"))
+                        .willReturn(
+                                WireMock.aResponse()
+                                        .withStatus(200)
+                                        .withBody(HMAC_200_RESPONSE_STRING)
+                        ));
+        // Stub for missing HMAC signature
+        hmacMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo("/get-data"))
+                        .atPriority(1)
+                        .withHeader("X-HMAC-SIGNATURE", WireMock.absent())
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(401)
+                                .withBody("Missing HMAC signature"))
+        );
+    }
+
 
 
     @AfterAll
@@ -291,6 +318,8 @@ class FeignClientTest {
             digestMockServer.stop();
         if(mutualTlsMockServer.isRunning())
             mutualTlsMockServer.stop();
+        if(hmacMockServer.isRunning())
+            hmacMockServer.stop();
     }
 
 
@@ -529,6 +558,36 @@ class FeignClientTest {
                             });
                     Assertions.assertTrue(allHttps, "All requests should be HTTPS because the server uses HTTPS");
 
+                });
+    }
+
+    @Test
+    void testHmacAuthClient() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/hmac"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                .andExpect(MockMvcResultMatchers.content().string(HMAC_200_RESPONSE_STRING));
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(2))
+                .untilAsserted(() -> {
+                    List<ServeEvent> events = hmacMockServer.getAllServeEvents();
+                    int numberOfRequestReceived = events.size();
+                    Assertions.assertEquals(1, numberOfRequestReceived);
+
+                    boolean requestReceived = events
+                            .stream()
+                            .anyMatch(event -> event.getRequest().getUrl().equals("/get-data") &&
+                                    event.getRequest().getAbsoluteUrl().contains(":" + hmacMockServer.getOptions().portNumber()));
+
+                    Assertions.assertTrue(requestReceived, "No request found on hmacMockServer");
+
+                    // check HMAC header presence and value
+                    String hmacHeader = events.getFirst().getRequest().getHeader("X-HMAC-SIGNATURE");
+                    Assertions.assertNotNull(hmacHeader, "X-HMAC-SIGNATURE header is missing");
+                    Assertions.assertFalse(hmacHeader.isBlank(), "X-HMAC-SIGNATURE header is blank");
                 });
     }
 

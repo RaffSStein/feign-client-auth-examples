@@ -37,3 +37,6 @@ spring:
             truststore:
               path: truststorePath
               password: truststorePassword
+        hmac:
+          host: http://localhost:8090
+          secret: hmacKey

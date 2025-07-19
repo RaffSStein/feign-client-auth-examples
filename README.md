@@ -454,12 +454,36 @@ Feign.builder()
 
 ## HMAC (Hash-based Message Authentication Code) Example
 
-#### WIP
+HMAC authentication is based on a shared secret key between the client and the server. The client computes a hash (signature) of the request data (such as HTTP method, URL, headers, or payload) using the secret key and sends it along with the request, typically in a custom header (e.g., `X-HMAC-SIGNATURE`). The server recomputes the hash to verify the integrity and authenticity of the request.
 
+### Feign Client Configuration (HMAC)
 
+To implement HMAC authentication with Feign, you can use a `RequestInterceptor` that generates the HMAC signature and adds it to the request headers.
+
+Example configuration:
+
+```java
+public class HmacClientConfig {
+
+    @Value("${spring.application.rest.client.hmac.secret}")
+    private String secret;
+
+    @Bean
+    public RequestInterceptor hmacRequestInterceptor() {
+        return requestTemplate -> {
+            String dataToSign = requestTemplate.method() + requestTemplate.url();
+            String signature = HmacUtils.hmacSha256Hex(secret, dataToSign);
+            requestTemplate.header("X-HMAC-SIGNATURE", signature);
+        };
+    }
+
+    @Bean
+    public Logger.Level hmacLoggerLevel() {return Logger.Level.FULL;}
+}
+```
+
+In the test, the Feign client sends a request with the `X-HMAC-SIGNATURE` header, and the server verifies the signature using the shared secret.
 
 ## SAML (Security Assertion Markup Language) Example
 
 #### WIP
-
- 

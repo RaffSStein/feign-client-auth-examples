@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import raff.stein.feignclient.client.apikey.ApiKeyClient;
 import raff.stein.feignclient.client.basicauth.BasicAuthClient;
 import raff.stein.feignclient.client.digest.DigestApacheClient;
+import raff.stein.feignclient.client.hmac.HashBasedMessageAuthClient;
 import raff.stein.feignclient.client.jwt.JwtClient;
 import raff.stein.feignclient.client.mutualtls.MutualTlsClient;
 import raff.stein.feignclient.client.ntlm.NTLMClient;
@@ -23,6 +24,7 @@ public class FeignClientSimpleService {
     private final JwtClient jwtClient;
     private final DigestApacheClient digestApacheClient;
     private final MutualTlsClient mutualTlsClient;
+    private final HashBasedMessageAuthClient hashBasedMessageAuthClient;
 
     public String simpleBasicAuthClientCall() {
         return basicAuthClient.getData();
@@ -52,6 +54,10 @@ public class FeignClientSimpleService {
 
     public String simpleMutualTlsClientCall() {
         return mutualTlsClient.getData();
+    }
+
+    public String simpleHashBasedMessageAuthClientCall() {
+        return hashBasedMessageAuthClient.getData();
     }
 
 
